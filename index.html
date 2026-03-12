@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroCash – Control simple de tus finanzas</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Celebration Container -->
+    <div id="celebration-container"></div>
+
+    <div id="auth-screen" class="screen">
+        <div class="auth-container">
+            <header>
+                <h1>NeuroCash</h1>
+                <p class="subtitle">Inicia sesión para controlar tus finanzas</p>
+            </header>
+            
+            <form id="login-form" class="auth-form">
+                <div class="input-group">
+                    <label for="login-email">Correo Electrónico</label>
+                    <input type="email" id="login-email" required placeholder="tu@email.com">
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" id="login-btn">Iniciar Sesión</button>
+                <p class="toggle-auth">¿No tienes cuenta? <a href="#" id="show-register">Regístrate aquí</a></p>
+            </form>
+
+            <form id="register-form" class="auth-form hidden">
+                <div class="input-group">
+                    <label for="register-email">Correo Electrónico</label>
+                    <input type="email" id="register-email" required placeholder="tu@email.com">
+                </div>
+                <div class="input-group">
+                    <label for="register-password">Contraseña</label>
+                    <input type="password" id="register-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" id="register-btn">Crear Cuenta</button>
+                <p class="toggle-auth">¿Ya tienes cuenta? <a href="#" id="show-login">Inicia Sesión</a></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="screen hidden">
+        <div class="container">
+            <header class="dashboard-header">
+                <div>
+                    <h1>NeuroCash</h1>
+                    <p class="subtitle">Panel de Control</p>
+                </div>
+                <div class="header-actions">
+                    <button id="reset-btn" class="outline-btn danger">Reiniciar datos</button>
+                    <button id="logout-btn" class="outline-btn">Cerrar Sesión</button>
+                </div>
+            </header>
+
+            <!-- Ahorro del día Section -->
+            <div id="savings-alert" class="savings-card hidden">
+                <div class="savings-content">
+                    <span class="icon">💰</span>
+                    <div class="text">
+                        <h3>Ahorro del día</h3>
+                        <p>"Cada centavo ahorrado es un centavo ganado."</p>
+                        <p class="small">Sigue siendo constante y disciplinado.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form section -->
+            <section class="form-container">
+                <form id="finance-form">
+                    <div class="input-group">
+                        <label for="amount">Cantidad</label>
+                        <input type="number" id="amount" step="0.01" required placeholder="0.00">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="type">Tipo de movimiento</label>
+                        <select id="type" required>
+                            <option value="ingreso">Ingreso</option>
+                            <option value="gasto">Gasto</option>
+                            <option value="ahorro">Ahorro</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label for="description">Descripción (Opcional)</label>
+                        <input type="text" id="description" placeholder="Ej. Pago de nómina, Cena, etc.">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="currency">Moneda</label>
+                        <select id="currency">
+                            <option value="USD">USD</option>
+                            <option value="COP">COP</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="add-btn">Agregar movimiento</button>
+                </form>
+            </section>
+
+            <!-- Financial Graph Section -->
+            <section class="graph-container">
+                <h2>Gráfico Financiero</h2>
+                <div class="graph-bars">
+                    <div class="bar-item">
+                        <label>Ingresos</label>
+                        <div class="bar-track"><div id="bar-income" class="bar-fill income" style="width: 0%"></div></div>
+                        <span id="label-income">$0.00</span>
+                    </div>
+                    <div class="bar-item">
+                        <label>Gastos</label>
+                        <div class="bar-track"><div id="bar-expenses" class="bar-fill expenses" style="width: 0%"></div></div>
+                        <span id="label-expenses">$0.00</span>
+                    </div>
+                    <div class="bar-item">
+                        <label>Balance</label>
+                        <div class="bar-track"><div id="bar-balance" class="bar-fill balance" style="width: 0%"></div></div>
+                        <span id="label-balance">$0.00</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Summary section -->
+            <section class="summary-container">
+                <div class="summary-card income">
+                    <h3>Total ingresos</h3>
+                    <p id="total-income">$0.00</p>
+                </div>
+                <div class="summary-card expenses">
+                    <h3>Total gastos</h3>
+                    <p id="total-expenses">$0.00</p>
+                </div>
+                <div class="summary-card balance">
+                    <h3>Balance</h3>
+                    <p id="total-balance">$0.00</p>
+                </div>
+            </section>
+
+            <!-- Table section with movements -->
+            <section class="table-container">
+                <div class="table-header">
+                    <h2>Movimientos Recientes</h2>
+                    <div class="filters">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="today">Hoy</button>
+                        <button class="filter-btn" data-filter="week">Esta semana</button>
+                        <button class="filter-btn" data-filter="month">Este mes</button>
+                    </div>
+                </div>
+                <div class="scrollable">
+                    <table id="movements-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Cantidad</th>
+                                <th>Moneda</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movements-body"></tbody>
+                    </table>
+                </div>
+                <div id="no-data" class="hidden">No hay movimientos para este periodo.</div>
+            </section>
+
+            <!-- Cash Flow Section -->
+            <section class="table-container">
+                <div class="table-header">
+                    <h2>Flujo de Caja</h2>
+                </div>
+                <div class="scrollable">
+                    <table id="flow-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Ingresos</th>
+                                <th>Gastos</th>
+                                <th>Balance Acumulado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="flow-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
