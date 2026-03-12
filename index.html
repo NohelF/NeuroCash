@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Celebration Container -->
     <div id="celebration-container"></div>
 
     <div id="auth-screen" class="screen">
@@ -62,21 +61,36 @@
                 </div>
             </header>
 
-            <!-- Ahorro del día Section -->
-            <div id="savings-alert" class="savings-card hidden">
-                <div class="savings-content">
-                    <span class="icon">💰</span>
-                    <div class="text">
-                        <h3>Ahorro del día</h3>
-                        <p>"Cada centavo ahorrado es un centavo ganado."</p>
-                        <p class="small">Sigue siendo constante y disciplinado.</p>
+            <div class="top-row">
+                <!-- Racha de ahorro Section -->
+                <section class="streak-card">
+                    <div class="streak-content">
+                        <span class="streak-emoji">🔥</span>
+                        <div class="streak-info">
+                            <h3>Racha de ahorro</h3>
+                            <p id="savings-streak">0 días</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Ahorro del día Alert -->
+                <div id="savings-alert" class="savings-card hidden">
+                    <div class="savings-content">
+                        <span class="icon">💰</span>
+                        <div class="text">
+                            <h3>Ahorro del día</h3>
+                            <p>"Cada centavo ahorrado es un centavo ganado."</p>
+                            <p class="small">Sigue siendo constante y disciplinado.</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Form section -->
             <section class="form-container">
+                <h2 id="form-title">Agregar movimiento</h2>
                 <form id="finance-form">
+                    <input type="hidden" id="movement-id">
                     <div class="input-group">
                         <label for="amount">Cantidad</label>
                         <input type="number" id="amount" step="0.01" required placeholder="0.00">
@@ -87,8 +101,12 @@
                         <select id="type" required>
                             <option value="ingreso">Ingreso</option>
                             <option value="gasto">Gasto</option>
-                            <option value="ahorro">Ahorro</option>
                         </select>
+                    </div>
+
+                    <div class="input-group checkbox-group">
+                        <input type="checkbox" id="is-savings">
+                        <label for="is-savings">¿Es un ahorro?</label>
                     </div>
 
                     <div class="input-group full-width">
@@ -105,7 +123,10 @@
                         </select>
                     </div>
 
-                    <button type="submit" id="add-btn">Agregar movimiento</button>
+                    <div class="form-buttons">
+                        <button type="submit" id="add-btn">Guardar movimiento</button>
+                        <button type="button" id="cancel-edit" class="hidden outline-btn">Cancelar</button>
+                    </div>
                 </form>
             </section>
 
@@ -116,17 +137,17 @@
                     <div class="bar-item">
                         <label>Ingresos</label>
                         <div class="bar-track"><div id="bar-income" class="bar-fill income" style="width: 0%"></div></div>
-                        <span id="label-income">$0.00</span>
+                        <span id="label-income">$0</span>
                     </div>
                     <div class="bar-item">
                         <label>Gastos</label>
                         <div class="bar-track"><div id="bar-expenses" class="bar-fill expenses" style="width: 0%"></div></div>
-                        <span id="label-expenses">$0.00</span>
+                        <span id="label-expenses">$0</span>
                     </div>
                     <div class="bar-item">
                         <label>Balance</label>
                         <div class="bar-track"><div id="bar-balance" class="bar-fill balance" style="width: 0%"></div></div>
-                        <span id="label-balance">$0.00</span>
+                        <span id="label-balance">$0</span>
                     </div>
                 </div>
             </section>
@@ -135,22 +156,22 @@
             <section class="summary-container">
                 <div class="summary-card income">
                     <h3>Total ingresos</h3>
-                    <p id="total-income">$0.00</p>
+                    <p id="total-income">$0</p>
                 </div>
                 <div class="summary-card expenses">
                     <h3>Total gastos</h3>
-                    <p id="total-expenses">$0.00</p>
+                    <p id="total-expenses">$0</p>
                 </div>
                 <div class="summary-card balance">
                     <h3>Balance</h3>
-                    <p id="total-balance">$0.00</p>
+                    <p id="total-balance">$0</p>
                 </div>
             </section>
 
-            <!-- Table section with movements -->
+            <!-- Table section -->
             <section class="table-container">
                 <div class="table-header">
-                    <h2>Movimientos Recientes</h2>
+                    <h2>Movimientos</h2>
                     <div class="filters">
                         <button class="filter-btn active" data-filter="all">Todos</button>
                         <button class="filter-btn" data-filter="today">Hoy</button>
@@ -167,32 +188,13 @@
                                 <th>Descripción</th>
                                 <th>Cantidad</th>
                                 <th>Moneda</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="movements-body"></tbody>
                     </table>
                 </div>
-                <div id="no-data" class="hidden">No hay movimientos para este periodo.</div>
-            </section>
-
-            <!-- Cash Flow Section -->
-            <section class="table-container">
-                <div class="table-header">
-                    <h2>Flujo de Caja</h2>
-                </div>
-                <div class="scrollable">
-                    <table id="flow-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Ingresos</th>
-                                <th>Gastos</th>
-                                <th>Balance Acumulado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="flow-body"></tbody>
-                    </table>
-                </div>
+                <div id="no-data" class="hidden">No hay movimientos registrados.</div>
             </section>
         </div>
     </div>
