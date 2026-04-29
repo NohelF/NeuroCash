@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,56 +9,32 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
     <div id="celebration-container"></div>
 
-    <div id="auth-screen" class="screen">
-        <div class="auth-container">
-            <header>
-                <h1>NeuroCash</h1>
-                <p class="subtitle">Inicia sesión para controlar tus finanzas</p>
-            </header>
-            
-            <form id="login-form" class="auth-form">
-                <div class="input-group">
-                    <label for="login-email">Correo Electrónico</label>
-                    <input type="email" id="login-email" required placeholder="tu@email.com">
-                </div>
-                <div class="input-group">
-                    <label for="login-password">Contraseña</label>
-                    <input type="password" id="login-password" required placeholder="••••••••">
-                </div>
-                <button type="submit" id="login-btn">Iniciar Sesión</button>
-                <p class="toggle-auth">¿No tienes cuenta? <a href="#" id="show-register">Regístrate aquí</a></p>
-            </form>
-
-            <form id="register-form" class="auth-form hidden">
-                <div class="input-group">
-                    <label for="register-email">Correo Electrónico</label>
-                    <input type="email" id="register-email" required placeholder="tu@email.com">
-                </div>
-                <div class="input-group">
-                    <label for="register-password">Contraseña</label>
-                    <input type="password" id="register-password" required placeholder="••••••••">
-                </div>
-                <button type="submit" id="register-btn">Crear Cuenta</button>
-                <p class="toggle-auth">¿Ya tienes cuenta? <a href="#" id="show-login">Inicia Sesión</a></p>
-            </form>
+    <!-- Loading Screen (Demo Mode) -->
+    <div id="loading-screen" class="screen">
+        <div class="loading-container">
+            <h1>NeuroCash <span style="font-size: 0.5em; background: var(--primary-color); color: black; padding: 2px 8px; border-radius: 4px; vertical-align: super;">DEMO</span></h1>
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Cargando modo demostración...</p>
         </div>
     </div>
 
+    <!-- Auth Screen has been completely removed in this demo version -->
+    
     <div id="dashboard-screen" class="screen hidden">
         <div class="container">
             <header class="dashboard-header">
                 <div>
-                    <h1>NeuroCash</h1>
-                    <p class="subtitle">Panel de Control</p>
+                    <h1>NeuroCash <span style="font-size: 0.5em; background: var(--primary-color); color: black; padding: 2px 8px; border-radius: 4px; vertical-align: super;">DEMO</span></h1>
+                    <p class="subtitle">Panel de Control (Ejecución Local)</p>
                 </div>
                 <div class="header-actions">
                     <button id="reset-btn" class="outline-btn danger">Reiniciar datos</button>
-                    <button id="logout-btn" class="outline-btn">Cerrar Sesión</button>
+                    <!-- Logout btn removed -->
                 </div>
             </header>
 
@@ -136,17 +113,23 @@
                 <div class="graph-bars">
                     <div class="bar-item">
                         <label>Ingresos</label>
-                        <div class="bar-track"><div id="bar-income" class="bar-fill income" style="width: 0%"></div></div>
+                        <div class="bar-track">
+                            <div id="bar-income" class="bar-fill income" style="width: 0%"></div>
+                        </div>
                         <span id="label-income">$0</span>
                     </div>
                     <div class="bar-item">
                         <label>Gastos</label>
-                        <div class="bar-track"><div id="bar-expenses" class="bar-fill expenses" style="width: 0%"></div></div>
+                        <div class="bar-track">
+                            <div id="bar-expenses" class="bar-fill expenses" style="width: 0%"></div>
+                        </div>
                         <span id="label-expenses">$0</span>
                     </div>
                     <div class="bar-item">
                         <label>Balance</label>
-                        <div class="bar-track"><div id="bar-balance" class="bar-fill balance" style="width: 0%"></div></div>
+                        <div class="bar-track">
+                            <div id="bar-balance" class="bar-fill balance" style="width: 0%"></div>
+                        </div>
                         <span id="label-balance">$0</span>
                     </div>
                 </div>
@@ -199,6 +182,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>

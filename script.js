@@ -1,28 +1,49 @@
-// NeuroCash V4 - Enhanced Personal Finance Tracker
+// NeuroCash DEMO Version - Standalone (No Backend)
+// ============================================================
+// 1. Fully decoupled from Supabase.
+// 2. Uses localStorage for data persistence mimicking a real DB.
+// 3. Implements strict loading mechanisms and fake network latency.
+// ============================================================
 
-const SUPABASE_URL = 'https://pabengrpftpsjypnfzwh.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_oJhoQN7LwH3yJLD4FOZ5_w_7b7g_vnM';
-
-// Initialize Official Supabase Client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ─── 1. State Management ───────────────────────────────────────────────
+const STORAGE_KEY = 'neurocash_demo_movements';
 
 const state = {
+    loading: true, // App starts blocked by loading state
     user: null,
     movements: [],
     currentFilter: 'all',
     editingId: null
 };
 
-const formatter = new Intl.NumberFormat('es-ES', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-});
-
-// UI Elements
-const authScreen = document.getElementById('auth-screen');
+// ─── 2. UI Elements ─────────────────────────────────────────────────────
+let loadingScreen = document.getElementById('loading-screen');
 const dashboardScreen = document.getElementById('dashboard-screen');
-const loginForm = document.getElementById('login-form');
-const registerForm = document.getElementById('register-form');
+
+// For safely grabbing loading texts if they exist
+const getLoadingText = () => document.querySelector('.loading-text');
+const getLoadingSpinner = () => document.querySelector('.loading-spinner');
+
+// Ensure loading screen exists locally inside the DOM if not found
+if (!loadingScreen) {
+    loadingScreen = document.createElement('div');
+    loadingScreen.id = 'loading-screen';
+    loadingScreen.className = 'screen';
+    loadingScreen.innerHTML = `
+        <div class="loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; align-self:center;">
+            <h1>NeuroCash <span style="font-size: 0.5em; background: #39FF14; color: black; padding: 2px 8px; border-radius: 4px; vertical-align: super;">DEMO</span></h1>
+            <div class="loading-spinner" style="width:48px;height:48px;border:3px solid #333;border-top-color:#39FF14;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            <p class="loading-text" style="color:#b0b0b0;animation:pulse-text 2s ease-in-out infinite;">Cargando modo demostración...</p>
+        </div>
+        <style>
+            @keyframes spin { to { transform: rotate(360deg); } }
+            @keyframes pulse-text { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+            .loading-spinner.error { border-top-color:#ff4d4d; animation:none; }
+        </style>
+    `;
+    document.body.insertBefore(loadingScreen, document.body.firstChild);
+}
+
 const financeForm = document.getElementById('finance-form');
 const movementsBody = document.getElementById('movements-body');
 const noDataEl = document.getElementById('no-data');
@@ -42,9 +63,6 @@ const labelBalance = document.getElementById('label-balance');
 const savingsAlert = document.getElementById('savings-alert');
 const celebrationContainer = document.getElementById('celebration-container');
 
-const showRegisterLink = document.getElementById('show-register');
-const showLoginLink = document.getElementById('show-login');
-const logoutBtn = document.getElementById('logout-btn');
 const resetBtn = document.getElementById('reset-btn');
 const cancelEditBtn = document.getElementById('cancel-edit');
 const filterBtns = document.querySelectorAll('.filter-btn');
@@ -52,76 +70,169 @@ const filterBtns = document.querySelectorAll('.filter-btn');
 const formTitle = document.getElementById('form-title');
 const submitBtn = document.getElementById('add-btn');
 
-// --- Initialization ---
-async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-        state.user = session.user;
-        showDashboard();
+const formatter = new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+});
+
+// ─── 3. Strict Loading UI ───────────────────────────────────────────────
+function setLoading(isLoading) {
+    state.loading = isLoading;
+    if (isLoading) {
+        dashboardScreen?.classList.add('hidden');
+        loadingScreen.classList.remove('hidden');
     } else {
-        showAuth();
+        loadingScreen.classList.add('hidden');
+        dashboardScreen?.classList.remove('hidden');
     }
-    supabase.auth.onAuthStateChange((_event, session) => {
-        if (session) {
-            state.user = session.user;
-            showDashboard();
-        } else {
-            state.user = null;
-            showAuth();
+}
+
+// Fallback error UI if initialization critically fails
+function setCriticalError(message) {
+    state.loading = false;
+    dashboardScreen?.classList.add('hidden');
+    loadingScreen.classList.remove('hidden');
+    
+    const textEl = getLoadingText();
+    const spinner = getLoadingSpinner();
+    if (textEl) textEl.textContent = message;
+    if (spinner) spinner.classList.add('error');
+}
+
+// ─── 4. Mock Backend Services ───────────────────────────────────────────
+// Helper function to simulate network latency
+const simulateNetworkLatency = (min = 300, max = 800) => {
+    const delay = Math.floor(Math.random() * (max - min + 1) + min);
+    return new Promise(resolve => setTimeout(resolve, delay));
+};
+
+const MockDB = {
+    async getMovements() {
+        await simulateNetworkLatency(300, 600);
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (data) {
+            return JSON.parse(data);
         }
-    });
-}
+        
+        // Seed default mock data if empty
+        const defaultData = [
+            { id: "mock-1", fecha: new Date().toISOString(), tipo: "ingreso", cantidad: 1500, descripcion: "Salario", moneda: "USD", es_ahorro: false },
+            { id: "mock-2", fecha: new Date().toISOString(), tipo: "gasto", cantidad: 45, descripcion: "Cena", moneda: "USD", es_ahorro: false },
+            { id: "mock-3", fecha: new Date().toISOString(), tipo: "ingreso", cantidad: 200, descripcion: "Ahorro programado", moneda: "USD", es_ahorro: true },
+        ];
+        this._save(defaultData);
+        return defaultData;
+    },
+    
+    async saveMovement(movement) {
+        await simulateNetworkLatency(400, 800);
+        const currentData = await this.getMovements();
+        const newMovement = {
+            ...movement,
+            id: `mov-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+        };
+        const updatedData = [newMovement, ...currentData];
+        this._save(updatedData);
+        return newMovement;
+    },
 
-// --- Navigation ---
-function showDashboard() {
-    authScreen.classList.add('hidden');
-    dashboardScreen.classList.remove('hidden');
-    loadMovements();
-}
+    async updateMovement(id, updatedFields) {
+        await simulateNetworkLatency(400, 800);
+        const currentData = await this.getMovements();
+        const idx = currentData.findIndex(m => m.id === id);
+        if (idx !== -1) {
+            currentData[idx] = { ...currentData[idx], ...updatedFields };
+            this._save(currentData);
+            return currentData[idx];
+        }
+        throw new Error('Movimiento no encontrado');
+    },
 
-function showAuth() {
-    dashboardScreen.classList.add('hidden');
-    authScreen.classList.remove('hidden');
-}
+    async deleteMovement(id) {
+        await simulateNetworkLatency(300, 600);
+        const currentData = await this.getMovements();
+        const updatedData = currentData.filter(m => m.id !== id);
+        this._save(updatedData);
+        return true;
+    },
 
-// --- Auth ---
-loginForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({
-        email: loginForm['login-email'].value,
-        password: loginForm['login-password'].value
-    });
-    if (error) alert('Error: ' + error.message);
+    async resetData() {
+        await simulateNetworkLatency(500, 1000);
+        this._save([]);
+        return true;
+    },
+
+    _save(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
 };
 
-registerForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const { error } = await supabase.auth.signUp({
-        email: registerForm['register-email'].value,
-        password: registerForm['register-password'].value
-    });
-    if (error) alert('Error: ' + error.message);
-    else { alert('Registro exitoso. Revisa tu email.'); showLoginLink.click(); }
-};
+// ─── 5. Async Bootstrap Flow (initSession) ──────────────────────────────
+async function initSession() {
+    setLoading(true);
 
-logoutBtn.onclick = async () => await supabase.auth.signOut();
-showRegisterLink.onclick = (e) => { e.preventDefault(); loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); };
-showLoginLink.onclick = (e) => { e.preventDefault(); registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); };
+    try {
+        console.info('[NeuroCash Demo] Iniciando aplicación (modo standalone)...');
+        
+        // Simulate auth check latency
+        await simulateNetworkLatency(500, 1000);
+        
+        // Mock a demo user permanently
+        state.user = { id: "demo-user-123", name: "Demo User" };
+        console.info('[NeuroCash Demo] Usuario mock cargado.');
 
-// --- Data Operations ---
-async function loadMovements() {
-    const { data, error } = await supabase
-        .from('movimientos')
-        .select('*')
-        .order('fecha', { ascending: false });
-    if (!error) {
+        // Load mock data
+        const data = await MockDB.getMovements();
         state.movements = data || [];
         updateUI();
+
+    } catch (err) {
+        console.error('[NeuroCash Demo] Error crítico durante el bootstrap:', err);
+        setCriticalError('Oops! Error cargando la demostración. Por favor, recarga.');
+        return; // Early return to avoid changing loading state to false
+    } finally {
+        // ALWAYS resolves the loading state unless an error occurred
+        if (state.user) {
+            setLoading(false);
+        }
+    }
+}
+
+// ─── 6. Data Operations ─────────────────────────────────────────────────
+async function executeGuardedOperation(operationFn) {
+    if (state.loading || !state.user) return false;
+    
+    // Disable inputs visually
+    submitBtn.disabled = true;
+    if (resetBtn) resetBtn.disabled = true;
+    
+    // Set loading indicator on button
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Guardando...';
+
+    try {
+        await operationFn();
+        
+        // Refresh local state UI seamlessly
+        const freshData = await MockDB.getMovements();
+        state.movements = freshData;
+        updateUI();
+        return true;
+
+    } catch (err) {
+        console.error('[NeuroCash Demo] Error de operación:', err);
+        alert('Error: ' + err.message);
+        return false;
+    } finally {
+        submitBtn.disabled = false;
+        if (resetBtn) resetBtn.disabled = false;
+        submitBtn.textContent = originalText;
     }
 }
 
 financeForm.onsubmit = async (e) => {
     e.preventDefault();
+
     const amount = parseFloat(financeForm['amount'].value);
     const type = financeForm['type'].value;
     const isSavings = financeForm['is-savings'].checked;
@@ -138,27 +249,23 @@ financeForm.onsubmit = async (e) => {
         fecha: state.editingId ? state.editingId.fecha : new Date().toISOString()
     };
 
-    let result;
-    if (state.editingId) {
-        result = await supabase.from('movimientos').update(movementData).eq('id', state.editingId.id);
-    } else {
-        result = await supabase.from('movimientos').insert([movementData]);
-    }
+    const isSuccess = await executeGuardedOperation(async () => {
+        if (state.editingId) {
+            await MockDB.updateMovement(state.editingId.id, movementData);
+        } else {
+            await MockDB.saveMovement(movementData);
+            if (isSavings) triggerCelebration();
+        }
+    });
 
-    if (result.error) {
-        alert('Error: ' + result.error.message);
-    } else {
-        if (isSavings && !state.editingId) triggerCelebration();
-        resetForm();
-        loadMovements();
-    }
+    if (isSuccess) resetForm();
 };
 
 async function deleteMovement(id) {
     if (confirm('¿Borrar este movimiento?')) {
-        const { error } = await supabase.from('movimientos').delete().eq('id', id);
-        if (error) alert('Error: ' + error.message);
-        else loadMovements();
+        await executeGuardedOperation(async () => {
+            await MockDB.deleteMovement(id);
+        });
     }
 }
 
@@ -167,13 +274,13 @@ function startEdit(movement) {
     formTitle.textContent = "Editar movimiento";
     submitBtn.textContent = "Actualizar movimiento";
     cancelEditBtn.classList.remove('hidden');
-    
+
     financeForm['amount'].value = movement.cantidad;
     financeForm['type'].value = movement.tipo;
     financeForm['is-savings'].checked = movement.es_ahorro;
     financeForm['description'].value = movement.descripcion;
     financeForm['currency'].value = movement.moneda;
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -187,14 +294,17 @@ function resetForm() {
 
 cancelEditBtn.onclick = resetForm;
 
-resetBtn.onclick = async () => {
-    if (confirm("¿Borrar TODOS tus movimientos?")) {
-        const { error } = await supabase.from('movimientos').delete().eq('user_id', state.user.id);
-        if (!error) loadMovements();
-    }
-};
+if (resetBtn) {
+    resetBtn.onclick = async () => {
+        if (confirm("¿Borrar TODOS tus movimientos permanentemente?")) {
+            await executeGuardedOperation(async () => {
+                await MockDB.resetData();
+            });
+        }
+    };
+}
 
-// --- UI Logic ---
+// ─── 7. UI Logic ────────────────────────────────────────────────────────
 function updateUI() {
     const filtered = filterMovements(state.movements, state.currentFilter);
     movementsBody.innerHTML = '';
@@ -228,26 +338,23 @@ function updateUI() {
                 <button class="btn-sm delete-btn" data-id="${m.id}">Borrar</button>
             </td>
         `;
-        
+
         row.querySelector('.edit-btn').onclick = () => startEdit(m);
         row.querySelector('.delete-btn').onclick = () => deleteMovement(m.id);
-        
+
         movementsBody.appendChild(row);
     });
 
     noDataEl.classList.toggle('hidden', filtered.length > 0);
-    
-    // Totals
+
     const balance = totalInc - totalExp;
     totalIncomeEl.textContent = `$${formatter.format(totalInc)}`;
     totalExpensesEl.textContent = `$${formatter.format(totalExp)}`;
     totalBalanceEl.textContent = `$${formatter.format(balance)}`;
     totalBalanceEl.style.color = balance >= 0 ? 'var(--balance-color)' : 'var(--danger-color)';
 
-    // Streak
     streakEl.textContent = `${calculateStreak(state.movements)} días`;
 
-    // Graph
     const max = Math.max(totalInc, totalExp, Math.abs(balance), 1);
     barIncome.style.width = `${(totalInc / max) * 100}%`;
     barExpenses.style.width = `${(totalExp / max) * 100}%`;
@@ -256,18 +363,16 @@ function updateUI() {
     labelExpenses.textContent = `$${formatter.format(totalExp)}`;
     labelBalance.textContent = `$${formatter.format(balance)}`;
 
-    // Saving Alert
     savingsAlert.classList.toggle('hidden', !hasTodaySavings);
 }
 
 function calculateStreak(movements) {
     if (!movements.length) return 0;
-    
-    // Get unique days with savings
+
     const savingsDays = [...new Set(movements
         .filter(m => m.es_ahorro)
         .map(m => new Date(m.fecha).toLocaleDateString())
-    )].sort((a,b) => new Date(b) - new Date(a)); // Newest first
+    )].sort((a, b) => new Date(b) - new Date(a));
 
     if (!savingsDays.length) return 0;
 
@@ -314,7 +419,7 @@ function filterMovements(items, filter) {
     });
 }
 
-// Celebration (same as V3 but optimized)
+// ─── 8. Celebration ─────────────────────────────────────────────────────
 function triggerCelebration() {
     for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
@@ -322,7 +427,7 @@ function triggerCelebration() {
         p.style.left = '50%'; p.style.top = '50%';
         p.style.setProperty('--tx', `${(Math.random() - 0.5) * 400}px`);
         p.style.setProperty('--ty', `${(Math.random() - 0.5) * 400}px`);
-        p.style.background = ['#39FF14', '#00FFFF', '#FFD700'][Math.floor(Math.random()*3)];
+        p.style.background = ['#39FF14', '#00FFFF', '#FFD700'][Math.floor(Math.random() * 3)];
         celebrationContainer.appendChild(p);
         setTimeout(() => p.remove(), 1000);
     }
@@ -335,4 +440,5 @@ filterBtns.forEach(btn => btn.onclick = () => {
     updateUI();
 });
 
-init();
+// ─── 9. Bootstrap Inicial ──────────────────────────────────────────────
+initSession();
